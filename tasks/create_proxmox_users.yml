@@ -1,0 +1,28 @@
+- name: Add Terraform user to Proxmox
+  vars:
+    query: "[?userid=='{{ item.username }}@pve']"
+  when: not(existing_proxmox_users | list | json_query(query))
+  block:
+    - name: "Create Proxmox user {{ item.username }}"
+      changed_when: true
+      ansible.builtin.command:
+        cmd: >-
+          /usr/sbin/pveum user add {{ item.username }}@pve
+            --password {{ item.password }}
+
+- name: Check Proxmox ACL's
+  changed_when: false
+  ansible.builtin.command:
+    cmd: /usr/sbin/pveum acl list --output-format json
+  register: proxmox_acl_output
+
+- name: Parse Proxmox ACL JSON
+  ansible.builtin.set_fact:
+    proxmox_acl: "{{ proxmox_acl_output.stdout | from_json }}"
+
+- name: "Add user {{ item.username }} to roles"
+  when: item.roles is defined
+  loop: "{{ item.roles }}"
+  loop_control:
+    loop_var: role
+  include_tasks: add_proxmox_user_to_role.yml

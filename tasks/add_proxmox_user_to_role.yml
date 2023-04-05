@@ -1,0 +1,16 @@
+---
+- name: "Add Proxmox user {{ item.username }} to role {{ role }}"
+  vars:
+    query: >-
+      [?
+        roleid=='{{ role }}' &&
+        ugid=='{{ item.username }}@pve' &&
+        path=='/' &&
+        type=='user'
+      ]
+  when: not(proxmox_acl | list | json_query(query))
+  ansible.builtin.command:
+    cmd: >-
+      pveum aclmod /
+        -user {{ item.username }}@pve
+        -role {{ role }}

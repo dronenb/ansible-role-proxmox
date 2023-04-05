@@ -1,2 +1,10 @@
 ---
-# handlers file for dronenb.proxmox
+# handlers file for proxmox
+- name: Restart pveproxy
+  ansible.builtin.service:
+    name: pveproxy
+    state: restarted
+
+- name: Update grub
+  ansible.builtin.command:
+    cmd: /usr/sbin/update-grub
