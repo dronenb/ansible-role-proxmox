@@ -1,5 +1,5 @@
 ---
-# tasks file for proxmox
+tasks file for proxmox
 - name: Set hostname
   ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
@@ -111,3 +111,33 @@
   loop_control:
     label: "{{ item.username }}"
   include_tasks: create_proxmox_users.yml
+
+- name: Retrieve image URL and checksum for Debian Cloud image
+  get_debian_cloud:
+  register: debian_cloud_image
+
+- name: Retrieve image URL and checksum for Rocky Cloud image
+  get_rocky_cloud:
+  register: rocky_cloud_image
+  delegate_to: 127.0.0.1 # So we don't have to install BS4 library on Proxmox host
+
+- name: Retrieve image URL and checksum for Ubuntu Cloud image
+  get_ubuntu_cloud:
+  register: ubuntu_cloud_image
+
+- name: Download Cloud images
+  loop:
+    - "{{ debian_cloud_image }}"
+    - "{{ rocky_cloud_image }}"
+    - "{{ ubuntu_cloud_image }}"
+  loop_control:
+    label: "{{ item.meta.image_name }}"
+  ansible.builtin.get_url:
+    url: "{{ item.meta.image_url }}"
+    checksum: >-
+      {{
+        item.meta.image_checksum_type | lower
+      }}:{{
+        item.meta.image_checksum
+      }}
+    dest: "/tmp/{{ item.meta.image_name }}"
