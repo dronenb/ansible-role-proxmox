@@ -1,116 +1,118 @@
 ---
-tasks file for proxmox
-- name: Set hostname
-  ansible.builtin.hostname:
-    name: "{{ inventory_hostname }}"
+# tasks file for proxmox
+# - name: Set hostname
+#   ansible.builtin.hostname:
+#     name: "{{ inventory_hostname }}"
 
-- name: Remove Proxmox enterprise repo from apt
-  ansible.builtin.file:
-    path: /etc/apt/sources.list.d/pve-enterprise.list
-    state: absent
+# - name: Remove Proxmox enterprise repo from apt
+#   ansible.builtin.file:
+#     path: /etc/apt/sources.list.d/pve-enterprise.list
+#     state: absent
 
-- name: Add Proxmox VE no subscription repo
-  ansible.builtin.apt_repository:
-    filename: pve-no-subscription
-    repo: >-
-      deb http://download.proxmox.com/debian/pve
-        bullseye pve-no-subscription
-    state: present
+# - name: Add Proxmox VE no subscription repo
+#   ansible.builtin.apt_repository:
+#     filename: pve-no-subscription
+#     repo: >-
+#       deb http://download.proxmox.com/debian/pve
+#         bullseye pve-no-subscription
+#     state: present
 
-# # This is after the proxmox repo removal/add intentionally
-# # Since this role includes apt update/upgrade
-- name: Include Debian role
-  ansible.builtin.include_role:
-    name: dronenb.debian
+# # # This is after the proxmox repo removal/add intentionally
+# # # Since this role includes apt update/upgrade
+# - name: Include Debian role
+#   ansible.builtin.include_role:
+#     name: dronenb.debian
 
-- name: Install libguestfs-tools
-  ansible.builtin.apt:
-    update_cache: false
-    pkg:
-      - libguestfs-tools
+# - name: Install useful packages
+#   ansible.builtin.apt:
+#     update_cache: false
+#     pkg:
+#       - jq
+#       - libguestfs-tools
+#       - python3-bs4
 
-- name: Check if hush login enabled
-  ansible.builtin.stat:
-    path: "{{ ansible_facts.env.HOME }}/.hushlogin"
-  register: hushlogin_stat
+# - name: Check if hush login enabled
+#   ansible.builtin.stat:
+#     path: "{{ ansible_facts.env.HOME }}/.hushlogin"
+#   register: hushlogin_stat
 
-- name: Enable hush login
-  when: not hushlogin_stat.stat.exists
-  ansible.builtin.file:
-    path: "{{ ansible_facts.env.HOME }}/.hushlogin"
-    state: touch
-    mode: '644'
+# - name: Enable hush login
+#   when: not hushlogin_stat.stat.exists
+#   ansible.builtin.file:
+#     path: "{{ ansible_facts.env.HOME }}/.hushlogin"
+#     state: touch
+#     mode: '644'
 
-- name: Add proxmoxlib.js path to variable
-  ansible.builtin.set_fact:
-    proxmoxlib_path: >-
-      /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+# - name: Add proxmoxlib.js path to variable
+#   ansible.builtin.set_fact:
+#     proxmoxlib_path: >-
+#       /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
 
-- name: Check proxmoxlib.js.bak exists
-  ansible.builtin.stat:
-    path: "{{ proxmoxlib_path }}.bak"
-  register: pmx_js_bak
+# - name: Check proxmoxlib.js.bak exists
+#   ansible.builtin.stat:
+#     path: "{{ proxmoxlib_path }}.bak"
+#   register: pmx_js_bak
 
-- name: Make backup from proxmoxlib.js
-  when: not pmx_js_bak.stat.exists
-  ansible.builtin.copy:
-    src: "{{ proxmoxlib_path }}"
-    dest: "{{ proxmoxlib_path }}.bak"
-    remote_src: true
-    mode: '644'
+# - name: Make backup from proxmoxlib.js
+#   when: not pmx_js_bak.stat.exists
+#   ansible.builtin.copy:
+#     src: "{{ proxmoxlib_path }}"
+#     dest: "{{ proxmoxlib_path }}.bak"
+#     remote_src: true
+#     mode: '644'
 
-- name: Remove no valid sub popup
-  ansible.builtin.replace:
-    path: "{{ proxmoxlib_path }}"
-    regexp: >-
-      (^\s+)(Ext.Msg.show\(\{\s+title:\s+gettext\('No valid subscription)
-    replace: '\1void({ //\2'
-  notify: Restart pveproxy
+# - name: Remove no valid sub popup
+#   ansible.builtin.replace:
+#     path: "{{ proxmoxlib_path }}"
+#     regexp: >-
+#       (^\s+)(Ext.Msg.show\(\{\s+title:\s+gettext\('No valid subscription)
+#     replace: '\1void({ //\2'
+#   notify: Restart pveproxy
 
-- name: Enable IOMMU (Intel)
-  when: >-
-    ansible_facts.processor |
-      list |
-      intersect(['GenuineIntel']) |
-      length > 0
-  ansible.builtin.lineinfile:
-    path: /etc/default/grub
-    search_string: GRUB_CMDLINE_LINUX_DEFAULT
-    line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on"'
-    state: present
-  notify: Update grub
+# - name: Enable IOMMU (Intel)
+#   when: >-
+#     ansible_facts.processor |
+#       list |
+#       intersect(['GenuineIntel']) |
+#       length > 0
+#   ansible.builtin.lineinfile:
+#     path: /etc/default/grub
+#     search_string: GRUB_CMDLINE_LINUX_DEFAULT
+#     line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on"'
+#     state: present
+#   notify: Update grub
 
-- name: Check existing Proxmox roles
-  changed_when: false
-  ansible.builtin.command:
-    cmd: /usr/sbin/pveum role list --output-format json
-  register: existing_proxmox_roles_output
+# - name: Check existing Proxmox roles
+#   changed_when: false
+#   ansible.builtin.command:
+#     cmd: /usr/sbin/pveum role list --output-format json
+#   register: existing_proxmox_roles_output
 
-- name: Parse Proxmox roles JSON
-  ansible.builtin.set_fact:
-    existing_proxmox_roles: "{{ existing_proxmox_roles_output.stdout | from_json }}"
+# - name: Parse Proxmox roles JSON
+#   ansible.builtin.set_fact:
+#     existing_proxmox_roles: "{{ existing_proxmox_roles_output.stdout | from_json }}"
 
-- name: Create Proxmox roles
-  loop: "{{ proxmox_roles }}"
-  loop_control:
-    label: "{{ item.name }}"
-  include_tasks: create_proxmox_roles.yml
+# - name: Create Proxmox roles
+#   loop: "{{ proxmox_roles }}"
+#   loop_control:
+#     label: "{{ item.name }}"
+#   include_tasks: create_proxmox_roles.yml
 
-- name: Check existing Proxmox users
-  changed_when: false
-  ansible.builtin.command:
-    cmd: /usr/sbin/pveum user list --output-format json
-  register: existing_proxmox_user_output
+# - name: Check existing Proxmox users
+#   changed_when: false
+#   ansible.builtin.command:
+#     cmd: /usr/sbin/pveum user list --output-format json
+#   register: existing_proxmox_user_output
 
-- name: Parse Proxmox user JSON
-  ansible.builtin.set_fact:
-    existing_proxmox_users: "{{ existing_proxmox_user_output.stdout | from_json }}"
+# - name: Parse Proxmox user JSON
+#   ansible.builtin.set_fact:
+#     existing_proxmox_users: "{{ existing_proxmox_user_output.stdout | from_json }}"
 
-- name: Create Proxmox users
-  loop: "{{ proxmox_users }}"
-  loop_control:
-    label: "{{ item.username }}"
-  include_tasks: create_proxmox_users.yml
+# - name: Create Proxmox users
+#   loop: "{{ proxmox_users }}"
+#   loop_control:
+#     label: "{{ item.username }}"
+#   include_tasks: create_proxmox_users.yml
 
 - name: Retrieve image URL and checksum for Debian Cloud image
   get_debian_cloud:
@@ -119,25 +121,39 @@ tasks file for proxmox
 - name: Retrieve image URL and checksum for Rocky Cloud image
   get_rocky_cloud:
   register: rocky_cloud_image
-  delegate_to: 127.0.0.1 # So we don't have to install BS4 library on Proxmox host
 
 - name: Retrieve image URL and checksum for Ubuntu Cloud image
   get_ubuntu_cloud:
   register: ubuntu_cloud_image
 
-- name: Download Cloud images
+- name: Get list of existing Proxmox VM Templates
+  get_proxmox_vm_templates:
+  register: existing_proxmox_templates
+
+- name: Get list of Proxmox image datastores
+  ansible.builtin.command:
+    cmd: pvesh get /nodes/fh-proxmox0/storage -content images --output-format json
+  register: image_datastores_output
+  changed_when: false
+
+- name: Parse Proxmox image datastores output
+  ansible.builtin.set_fact:
+    image_datastores: "{{ image_datastores_output.stdout | from_json }}"
+
+- name: Create variable for Proxmox datastore if unset
+  when: proxmox_template_datastore is undefined
+  ansible.builtin.set_fact:
+    proxmox_template_datastore: "{{ image_datastores.0.storage }}"
+
+- name: Download and install cloud images to Proxmox
   loop:
     - "{{ debian_cloud_image }}"
     - "{{ rocky_cloud_image }}"
     - "{{ ubuntu_cloud_image }}"
   loop_control:
-    label: "{{ item.meta.image_name }}"
-  ansible.builtin.get_url:
-    url: "{{ item.meta.image_url }}"
-    checksum: >-
-      {{
-        item.meta.image_checksum_type | lower
-      }}:{{
-        item.meta.image_checksum
-      }}
-    dest: "/tmp/{{ item.meta.image_name }}"
+    loop_var: image
+    label: "{{ image.meta.image_name }}"
+  vars:
+    query1: "[?name==`{{ image.meta.template_name }}` && image_checksum==`{{ image.meta.image_checksum }}`]"
+  when: not (existing_proxmox_templates.meta | json_query(query1))
+  include_tasks: create_cloud_vm_template.yml

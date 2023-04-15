@@ -17,6 +17,10 @@ def main():
             "default"   : "amd64",
             "type"      : "str"
         },
+        "template_name" : {
+            "default"   : "debian-latest",
+            "type"      : "str",
+        },
     }
     module = AnsibleModule(argument_spec=fields)
 
@@ -35,6 +39,8 @@ def main():
                         "image_url"             : image_url,
                         "image_checksum"        : checksum,
                         "image_checksum_type"   : "SHA512",
+                        "image_version"         : str(module.params["major_version"]),
+                        "template_name"         : module.params["template_name"],
                     }
                     module.exit_json(changed=False, meta=ansible_response)
     module.fail_json("Could not find checksum for %s" % (image_name))

@@ -1,0 +1,78 @@
+---
+- name: Download and install cloud images to Proxmox
+  ansible.builtin.get_url:
+    url: "{{ image.meta.image_url }}"
+    checksum: >-
+      {{
+        image.meta.image_checksum_type | lower
+      }}:{{
+        image.meta.image_checksum
+      }}
+    dest: "/tmp/{{ image.meta.image_name }}"
+
+- name: "Deleting outdated templates with name: {{ image.meta.template_name }}"
+  vars:
+    query2: "[?name==`{{ image.meta.template_name }}`]"
+  when: existing_proxmox_templates.meta | json_query(query2) | length > 0
+  loop: "{{ existing_proxmox_templates.meta | json_query(query2) }}"
+  loop_control:
+    loop_var: vm
+    label: "{{ vm.vmid }}"
+  ansible.builtin.command:
+    cmd: "qm destroy {{ vm.vmid }}"
+
+- name: Get next available VM ID
+  ansible.builtin.command:
+    cmd: pvesh get /cluster/nextid
+  register: next_id
+  changed_when: false
+
+- name: "Create VM {{ image.meta.template_name }} (ID={{ next_id.stdout }})"
+  ansible.builtin.command:
+    cmd: >-
+      qm  create    {{ next_id.stdout }}
+          --memory  2048
+          --core    2
+          --name    {{ image.meta.template_name }}
+          --net0    virtio,bridge=vmbr0
+          --tags    checksum-{{ image.meta.image_checksum }},version-{{ image.meta.image_version }}
+
+- name: "Import image {{ image.meta.image_name }} as disk of {{ image.meta.template_name }}"
+  ansible.builtin.command:
+    cmd: "qm importdisk {{ next_id.stdout }} /tmp/{{ image.meta.image_name }} {{ proxmox_template_datastore }}"
+
+- name: "Mount image disk to {{ image.meta.template_name }}"
+  ansible.builtin.command:
+    cmd: >-
+      qm  set       {{ next_id.stdout }}
+          --scsihw  virtio-scsi-pci
+          --scsi0   {{ proxmox_template_datastore }}:vm-{{ next_id.stdout }}-disk-0
+
+- name: "Create cloud-init drive for {{ image.meta.template_name }}"
+  ansible.builtin.command:
+    cmd: >-
+      qm  set     {{ next_id.stdout }}
+          --ide2  {{ proxmox_template_datastore }}:cloudinit
+
+- name: "Set boot drive for {{ image.meta.template_name }}"
+  ansible.builtin.command:
+    cmd: >-
+      qm  set         {{ next_id.stdout }}
+          --boot      c
+          --bootdisk  scsi0
+
+- name: "Set up video output for {{ image.meta.template_name }}"
+  ansible.builtin.command:
+    cmd: >-
+      qm  set       {{ next_id.stdout }}
+          --serial0 socket
+          --vga     serial0
+
+- name: "Turn VM {{ next_id.stdout }} into a template"
+  ansible.builtin.command:
+    cmd: "qm template {{ next_id.stdout }}"
+
+- name: "Delete the image on disk {{ image.meta.image_name }}"
+  ansible.builtin.file:
+    path: "/tmp/{{ image.meta.image_name }}"
+    state: absent

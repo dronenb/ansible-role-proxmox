@@ -10,6 +10,10 @@ def main():
             "default"   : "x86_64",
             "type"      : "str"
         },
+        "template_name" : {
+            "default"   : "rocky-latest",
+            "type"      : "str",
+        },
     }
     module = AnsibleModule(argument_spec=fields)
 
@@ -36,6 +40,8 @@ def main():
                         "image_url"             : image_url,
                         "image_checksum"        : checksum,
                         "image_checksum_type"   : "SHA256",
+                        "image_version"         : "%.1f" % (version),
+                        "template_name"         : module.params["template_name"],
                     }
                     module.exit_json(changed=False, meta=ansible_response)
         module.fail_json("Could not find checksum for %s" % (image_name))
