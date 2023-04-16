@@ -31,6 +31,7 @@
   ansible.builtin.command:
     cmd: >-
       qm  create    {{ next_id.stdout }}
+          --bios    ovmf
           --core    2
           --ide2    {{ proxmox_template_datastore }}:cloudinit
           --machine q35
