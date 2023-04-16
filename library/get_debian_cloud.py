@@ -25,7 +25,7 @@ def main():
     module = AnsibleModule(argument_spec=fields)
 
     base_url = "https://cloud.debian.org/images/cloud/{}/latest".format(module.params["codename"])
-    image_name = "debian-%d-nocloud-%s.qcow2" % (module.params["major_version"], module.params["arch"])
+    image_name = "debian-%d-generic-%s.qcow2" % (module.params["major_version"], module.params["arch"])
     image_url = "%s/%s" % (base_url, image_name)
     checksum_url = "%s/SHA512SUMS" % (base_url)
 

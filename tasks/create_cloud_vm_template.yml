@@ -30,17 +30,18 @@
 - name: "Create VM {{ image.meta.template_name }} (ID={{ next_id.stdout }})"
   ansible.builtin.command:
     cmd: >-
-      qm  create    {{ next_id.stdout }}
-          --bios    ovmf
-          --core    2
-          --ide2    {{ proxmox_template_datastore }}:cloudinit
-          --machine q35
-          --memory  2048
-          --name    {{ image.meta.template_name }}
-          --net0    virtio,bridge=vmbr0
-          --serial0 socket
-          --vga     serial0
-          --tags    checksum-{{ image.meta.image_checksum }},version-{{ image.meta.image_version }}
+      qm  create      {{ next_id.stdout }}
+          --bios      ovmf
+          --core      2
+          --ide2      {{ proxmox_template_datastore }}:cloudinit
+          --ipconfig0 ip=dhcp,ip6=dhcp
+          --machine   q35
+          --memory    2048
+          --name      {{ image.meta.template_name }}
+          --net0      virtio,bridge=vmbr0
+          --serial0   socket
+          --vga       serial0
+          --tags      checksum-{{ image.meta.image_checksum }},version-{{ image.meta.image_version }}
 
 - name: "Import image {{ image.meta.image_name }} as disk of {{ image.meta.template_name }}"
   ansible.builtin.command:
