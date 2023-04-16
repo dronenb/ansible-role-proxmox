@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 from ansible.module_utils.basic import *
 import urllib.request
