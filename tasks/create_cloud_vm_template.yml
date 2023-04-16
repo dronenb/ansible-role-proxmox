@@ -1,5 +1,5 @@
 ---
-- name: Download and install cloud images to Proxmox
+- name: "Download cloud image {{ image.meta.image_name }}"
   ansible.builtin.get_url:
     url: "{{ image.meta.image_url }}"
     checksum: >-
@@ -31,10 +31,14 @@
   ansible.builtin.command:
     cmd: >-
       qm  create    {{ next_id.stdout }}
-          --memory  2048
           --core    2
+          --ide2    {{ proxmox_template_datastore }}:cloudinit
+          --machine q35
+          --memory  2048
           --name    {{ image.meta.template_name }}
           --net0    virtio,bridge=vmbr0
+          --serial0 socket
+          --vga     serial0
           --tags    checksum-{{ image.meta.image_checksum }},version-{{ image.meta.image_version }}
 
 - name: "Import image {{ image.meta.image_name }} as disk of {{ image.meta.template_name }}"
@@ -47,26 +51,8 @@
       qm  set       {{ next_id.stdout }}
           --scsihw  virtio-scsi-pci
           --scsi0   {{ proxmox_template_datastore }}:vm-{{ next_id.stdout }}-disk-0
-
-- name: "Create cloud-init drive for {{ image.meta.template_name }}"
-  ansible.builtin.command:
-    cmd: >-
-      qm  set     {{ next_id.stdout }}
-          --ide2  {{ proxmox_template_datastore }}:cloudinit
-
-- name: "Set boot drive for {{ image.meta.template_name }}"
-  ansible.builtin.command:
-    cmd: >-
-      qm  set         {{ next_id.stdout }}
           --boot      c
           --bootdisk  scsi0
-
-- name: "Set up video output for {{ image.meta.template_name }}"
-  ansible.builtin.command:
-    cmd: >-
-      qm  set       {{ next_id.stdout }}
-          --serial0 socket
-          --vga     serial0
 
 - name: "Turn VM {{ next_id.stdout }} into a template"
   ansible.builtin.command:
