@@ -165,10 +165,9 @@
 
 - name: List available Debian/Ubuntu/Rocky LXC templates
   ansible.builtin.shell:
-    cmd: pveam available | awk '{if ($1 == "system"){print $2}}' | grep -E '^ubuntu|debian|rockylinux'
+    cmd: pveam available --section system | awk '{print $2}' | grep -E '^ubuntu|debian|rockylinux'
   register: lxc_templates
   changed_when: false
-
 
 - name: "Download Proxmox LXC templates"
   loop: "{{ lxc_templates.stdout_lines }}"
