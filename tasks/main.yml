@@ -157,3 +157,21 @@
     query1: "[?name==`{{ image.meta.template_name }}` && image_checksum==`{{ image.meta.image_checksum }}`]"
   when: not (existing_proxmox_templates.meta | json_query(query1))
   include_tasks: create_cloud_vm_template.yml
+
+- name: Get available Proxmox LXC templates
+  ansible.builtin.command:
+    cmd: pveam update
+  changed_when: false
+
+- name: List available Debian/Ubuntu/Rocky LXC templates
+  ansible.builtin.shell:
+    cmd: pveam available | awk '{if ($1 == "system"){print $2}}' | grep -E '^ubuntu|debian|rockylinux'
+  register: lxc_templates
+  changed_when: false
+
+
+- name: "Download Proxmox LXC templates"
+  loop: "{{ lxc_templates.stdout_lines }}"
+  loop_control:
+    loop_var: template_filename
+  include_tasks: download_lxc_template.yml

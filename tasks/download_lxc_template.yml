@@ -1,0 +1,6 @@
+---
+- name: "Download LXC template {{ template_filename }}"
+  ansible.builtin.command:
+    cmd: "pveam download local {{ template_filename }}"
+  register: lxc_download_results
+  changed_when: not "OK, got correct file already, no need to download" in lxc_download_results.stdout
