@@ -6,11 +6,11 @@ import urllib.request
 def main():
     fields = {
         "codename" : {
-            "default"   : "bullseye",
+            "default"   : "bookworm",
             "type"      : "str",
         },
         "major_version" : {
-            "default"   : 11,
+            "default"   : 12,
             "type"      : "int",
         },
         "arch" : {
