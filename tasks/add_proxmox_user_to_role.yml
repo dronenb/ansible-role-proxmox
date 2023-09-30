@@ -14,3 +14,4 @@
       pveum aclmod /
         -user {{ item.username }}@pve
         -role {{ role }}
+  changed_when: true

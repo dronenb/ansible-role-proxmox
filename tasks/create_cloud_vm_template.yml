@@ -20,6 +20,7 @@
     label: "{{ vm.vmid }}"
   ansible.builtin.command:
     cmd: "qm destroy {{ vm.vmid }}"
+  changed_when: true
 
 - name: Get next available VM ID
   ansible.builtin.command:
@@ -42,10 +43,12 @@
           --serial0   socket
           --vga       serial0
           --tags      checksum-{{ image.meta.image_checksum }},version-{{ image.meta.image_version }}
+  changed_when: true
 
 - name: "Import image {{ image.meta.image_name }} as disk of {{ image.meta.template_name }}"
   ansible.builtin.command:
     cmd: "qm importdisk {{ next_id.stdout }} /tmp/{{ image.meta.image_name }} {{ proxmox_template_datastore }}"
+  changed_when: true
 
 - name: "Mount image disk to {{ image.meta.template_name }}"
   ansible.builtin.command:
@@ -55,10 +58,12 @@
           --scsi0   {{ proxmox_template_datastore }}:vm-{{ next_id.stdout }}-disk-0
           --boot      c
           --bootdisk  scsi0
+  changed_when: true
 
 - name: "Turn VM {{ next_id.stdout }} into a template"
   ansible.builtin.command:
     cmd: "qm template {{ next_id.stdout }}"
+  changed_when: true
 
 - name: "Delete the image on disk {{ image.meta.image_name }}"
   ansible.builtin.file:

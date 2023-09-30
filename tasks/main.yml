@@ -96,7 +96,7 @@
   loop: "{{ proxmox_roles }}"
   loop_control:
     label: "{{ item.name }}"
-  include_tasks: create_proxmox_roles.yml
+  ansible.builtin.include_tasks: create_proxmox_roles.yml
 
 - name: Check existing Proxmox users
   changed_when: false
@@ -112,7 +112,7 @@
   loop: "{{ proxmox_users }}"
   loop_control:
     label: "{{ item.username }}"
-  include_tasks: create_proxmox_users.yml
+  ansible.builtin.include_tasks: create_proxmox_users.yml
 
 - name: Retrieve image URL and checksum for Debian Cloud image
   get_debian_cloud:
@@ -156,7 +156,7 @@
   vars:
     query1: "[?name==`{{ image.meta.template_name }}` && image_checksum==`{{ image.meta.image_checksum }}`]"
   when: not (existing_proxmox_templates.meta | json_query(query1))
-  include_tasks: create_cloud_vm_template.yml
+  ansible.builtin.include_tasks: create_cloud_vm_template.yml
 
 - name: Get available Proxmox LXC templates
   ansible.builtin.command:
@@ -173,4 +173,4 @@
   loop: "{{ lxc_templates.stdout_lines }}"
   loop_control:
     loop_var: template_filename
-  include_tasks: download_lxc_template.yml
+  ansible.builtin.include_tasks: download_lxc_template.yml

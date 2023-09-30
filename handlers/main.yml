@@ -8,3 +8,4 @@
 - name: Update grub
   ansible.builtin.command:
     cmd: /usr/sbin/update-grub
+  changed_when: true

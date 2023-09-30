@@ -1,3 +1,4 @@
+---
 - name: Add Terraform user to Proxmox
   vars:
     query: "[?userid=='{{ item.username }}@pve']"
@@ -25,4 +26,4 @@
   loop: "{{ item.roles }}"
   loop_control:
     loop_var: role
-  include_tasks: add_proxmox_user_to_role.yml
+  ansible.builtin.include_tasks: add_proxmox_user_to_role.yml

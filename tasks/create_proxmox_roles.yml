@@ -1,3 +1,4 @@
+---
 # TODO: Check to make sure privileges match
 - name: "Create role {{ item.name }} to Proxmox"
   vars:
@@ -7,3 +8,4 @@
     cmd: >-
       /usr/sbin/pveum role add {{ item.name }}
         -privs '{{ item.privileges | join(' ') }}'
+  changed_when: true
