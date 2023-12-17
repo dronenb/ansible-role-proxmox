@@ -172,6 +172,7 @@
 
 - name: List available Debian/Ubuntu/Rocky LXC templates
   ansible.builtin.shell:
+    executable: /bin/bash
     cmd: |
       set -o pipefail
       pveam available --section system |
