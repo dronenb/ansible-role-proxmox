@@ -9,6 +9,7 @@
         image.meta.image_checksum
       }}
     dest: "/tmp/{{ image.meta.image_name }}"
+    mode: 640
 
 - name: "Deleting outdated templates with name: {{ image.meta.template_name }}"
   vars:
@@ -30,6 +31,7 @@
 
 - name: "Create VM {{ image.meta.template_name }} (ID={{ next_id.stdout }})"
   ansible.builtin.command:
+    # yamllint disable rule:line-length
     cmd: >-
       qm  create      {{ next_id.stdout }}
           --bios      ovmf
@@ -43,21 +45,26 @@
           --serial0   socket
           --vga       serial0
           --tags      checksum-{{ image.meta.image_checksum }},version-{{ image.meta.image_version }}
+    # yamllint enable rule:line-length
   changed_when: true
 
+# yamllint disable-line rule:line-length
 - name: "Import image {{ image.meta.image_name }} as disk of {{ image.meta.template_name }}"
   ansible.builtin.command:
+    # yamllint disable-line rule:line-length
     cmd: "qm importdisk {{ next_id.stdout }} /tmp/{{ image.meta.image_name }} {{ proxmox_template_datastore }}"
   changed_when: true
 
 - name: "Mount image disk to {{ image.meta.template_name }}"
   ansible.builtin.command:
+    # yamllint disable rule:line-length
     cmd: >-
       qm  set       {{ next_id.stdout }}
           --scsihw  virtio-scsi-pci
           --scsi0   {{ proxmox_template_datastore }}:vm-{{ next_id.stdout }}-disk-0
           --boot      c
           --bootdisk  scsi0
+    # yamllint enable rule:line-length
   changed_when: true
 
 - name: "Turn VM {{ next_id.stdout }} into a template"

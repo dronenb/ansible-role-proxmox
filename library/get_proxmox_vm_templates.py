@@ -17,7 +17,7 @@ def main():
             vm['tags'] = vm['tags'].split(',')
             vm['image_checksum'] = ""
             for tag in vm['tags']:
-                match = re.search("checksum-(.*)", tag)
+                match = re.search(r"checksum-(.*)", tag)
                 if match:
                     vm['image_checksum'] = match.group(1)
                     break

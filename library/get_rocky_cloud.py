@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from ansible.module_utils.basic import *
+import re
 import urllib.request
 from bs4 import BeautifulSoup
 
@@ -23,16 +24,15 @@ def main():
         soup = BeautifulSoup(response.read().decode(), "lxml")
         version = 0.0
         for tag in soup.find_all("a"):
-            match = re.search("(\d+\.\d+)/", tag.get_text())
+            match = re.search(r"(\d+\.\d+)/", tag.get_text())
             if match and float(match.group(1)) > version:
                 version = float(match.group(1))
         image_name = "Rocky-%.0f-GenericCloud.latest.x86_64.qcow2" % (version)
         image_url = "%s/%s/images/%s/%s" % (base_url, str(version), module.params["arch"], image_name)
         checksum_url = "%s.CHECKSUM" % (image_url)
         with urllib.request.urlopen(checksum_url) as checksum_response:
-            regex = "^SHA256 \(%s\) = (.*)$"
             for line in checksum_response.read().decode().split("\n"):
-                checksum_match = re.search("^SHA256 \(%s\) = (.*)$" % (image_name), line)
+                checksum_match = re.search(r"^SHA256 \(%s\) = (.*)$" % (image_name), line)
                 if checksum_match:
                     checksum = checksum_match.group(1)
                     ansible_response = {

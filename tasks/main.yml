@@ -17,8 +17,8 @@
         bullseye pve-no-subscription
     state: present
 
-# # This is after the proxmox repo removal/add intentionally
-# # Since this role includes apt update/upgrade
+# This is after the proxmox repo removal/add intentionally
+# Since this role includes apt update/upgrade
 - name: Include Debian role
   ansible.builtin.include_role:
     name: dronenb.debian
@@ -29,7 +29,10 @@
     pkg:
       - jq
       - libguestfs-tools
+      # Required for my custom cloud image download libraries
       - python3-bs4
+      - python3-lxml
+      - python3-certifi
 
 - name: Check if hush login enabled
   ansible.builtin.stat:
@@ -90,6 +93,7 @@
 
 - name: Parse Proxmox roles JSON
   ansible.builtin.set_fact:
+    # yamllint disable-line rule:line-length
     existing_proxmox_roles: "{{ existing_proxmox_roles_output.stdout | from_json }}"
 
 - name: Create Proxmox roles
@@ -106,6 +110,7 @@
 
 - name: Parse Proxmox user JSON
   ansible.builtin.set_fact:
+    # yamllint disable-line rule:line-length
     existing_proxmox_users: "{{ existing_proxmox_user_output.stdout | from_json }}"
 
 - name: Create Proxmox users
@@ -132,6 +137,7 @@
 
 - name: Get list of Proxmox image datastores
   ansible.builtin.command:
+    # yamllint disable-line rule:line-length
     cmd: pvesh get /nodes/fh-proxmox0/storage -content images --output-format json
   register: image_datastores_output
   changed_when: false
@@ -154,6 +160,7 @@
     loop_var: image
     label: "{{ image.meta.image_name }}"
   vars:
+    # yamllint disable-line rule:line-length
     query1: "[?name==`{{ image.meta.template_name }}` && image_checksum==`{{ image.meta.image_checksum }}`]"
   when: not (existing_proxmox_templates.meta | json_query(query1))
   ansible.builtin.include_tasks: create_cloud_vm_template.yml
@@ -165,7 +172,11 @@
 
 - name: List available Debian/Ubuntu/Rocky LXC templates
   ansible.builtin.shell:
-    cmd: pveam available --section system | awk '{print $2}' | grep -E '^ubuntu|debian|rockylinux'
+    cmd: |
+      set -o pipefail
+      pveam available --section system |
+        awk '{print $2}' |
+        grep -E '^ubuntu|debian|rockylinux'
   register: lxc_templates
   changed_when: false
 
