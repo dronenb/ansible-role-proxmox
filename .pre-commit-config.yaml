@@ -23,6 +23,7 @@ repos:
         files: \.(yaml|yml)$
         name: Ansible Lint
         description: Run configurations on .ansible-lint file
+        entry: python3 -m ansiblelint --force-color
         always_run: false
         additional_dependencies:
           - "jmespath"
