@@ -17,7 +17,7 @@ repos:
     hooks:
       - id: markdownlint
   - repo: https://github.com/ansible/ansible-lint.git
-    rev: v6.22.1
+    rev: v6.22.2
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$
