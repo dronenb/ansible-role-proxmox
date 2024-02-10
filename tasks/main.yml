@@ -137,6 +137,7 @@
     existing_proxmox_users: "{{ existing_proxmox_user_output.stdout | from_json }}"
 
 - name: Create Proxmox users
+  when: proxmox_users is defined
   loop: "{{ proxmox_users }}"
   loop_control:
     label: "{{ item.username }}"
