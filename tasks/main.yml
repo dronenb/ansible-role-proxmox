@@ -5,17 +5,40 @@
     name: "{{ inventory_hostname }}"
 
 - name: Remove Proxmox enterprise repo from apt
+  loop:
+    - /etc/apt/sources.list.d/pve-enterprise.list
+    - /etc/apt/sources.list.d/pve-enterprise.list.dpkg-dist
   ansible.builtin.file:
-    path: /etc/apt/sources.list.d/pve-enterprise.list
+    path: "{{ item }}"
     state: absent
+
+- name: Variabilize Proxmox no-sub repo
+  ansible.builtin.set_fact:
+    proxmox_no_sub_repo: pve-install-repo
 
 - name: Add Proxmox VE no subscription repo
   ansible.builtin.apt_repository:
-    filename: pve-no-subscription
+    filename: "{{ proxmox_no_sub_repo }}"
     repo: >-
       deb http://download.proxmox.com/debian/pve
-        bullseye pve-no-subscription
+        {{ ansible_facts.distribution_release }} pve-no-subscription
     state: present
+
+- name: Find Proxmox VE no sub repos for older distributions
+  ansible.builtin.command:
+    cmd: >-
+      grep -v {{ ansible_facts.distribution_release }}
+        /etc/apt/sources.list.d/{{ proxmox_no_sub_repo }}.list
+  register: old_repos
+  changed_when: false
+  failed_when: false
+
+- name: Remove Proxmox VE no subscription repo for older distributions
+  loop: "{{ old_repos.stdout_lines }}"
+  ansible.builtin.apt_repository:
+    filename: "{{ proxmox_no_sub_repo }}"
+    repo: "{{ item }}"
+    state: absent
 
 # This is after the proxmox repo removal/add intentionally
 # Since this role includes apt update/upgrade
