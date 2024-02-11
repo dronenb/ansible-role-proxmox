@@ -1,23 +1,23 @@
 ---
 repos:
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.1
+    rev: 145400593c178304246371bc45290588bc72f43e  # frozen: v8.18.2
     hooks:
       - id: gitleaks
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
+    rev: 4de1378e4cd853bfc2b111b05fff35e2dbf809a3  # frozen: v0.9.0.6
     hooks:
       - id: shellcheck
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.33.0
+    rev: dd99a1c965b56027e9773442f41d3c58cc53c690  # frozen: v1.34.0
     hooks:
       - id: yamllint
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.38.0
+    rev: c9ea83146232fb263effdfe6f222d87f5395b27a  # frozen: v0.39.0
     hooks:
       - id: markdownlint
   - repo: https://github.com/ansible/ansible-lint.git
-    rev: v6.22.2
+    rev: a3fc7e4def4c3576a221fd1e0e58c0ee43f73af5  # frozen: v24.2.0
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$
