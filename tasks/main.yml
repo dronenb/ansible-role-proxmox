@@ -56,6 +56,7 @@
       - python3-bs4
       - python3-lxml
       - python3-certifi
+      - yq
 
 - name: Check if hush login enabled
   ansible.builtin.stat:
@@ -143,6 +144,10 @@
     label: "{{ item.username }}"
   ansible.builtin.include_tasks: create_proxmox_users.yml
 
+- name: Retrieve image URL and checksum for Fedora CoreOS image
+  get_fedora_coreos:
+  register: fcos_image
+
 - name: Retrieve image URL and checksum for Debian Cloud image
   get_debian_cloud:
   register: debian_cloud_image
@@ -180,6 +185,7 @@
     - "{{ debian_cloud_image }}"
     - "{{ rocky_cloud_image }}"
     - "{{ ubuntu_cloud_image }}"
+    - "{{ fcos_image }}"
   loop_control:
     loop_var: image
     label: "{{ image.meta.image_name }}"

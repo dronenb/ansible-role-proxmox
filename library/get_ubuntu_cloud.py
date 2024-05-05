@@ -6,7 +6,7 @@ import urllib.request
 def main():
     fields = {
         "codename" : {
-            "default"   : "jammy",
+            "default"   : "noble",
             "type"      : "str",
         },
         "arch" : {

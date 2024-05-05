@@ -1,5 +1,9 @@
 ---
-- name: "Download cloud image {{ image.meta.image_name }}"
+- name: Set image name fact
+  ansible.builtin.set_fact:
+    image_name: "{{ image.meta.image_name }}"
+
+- name: "Download cloud image {{ image_name }}"
   ansible.builtin.get_url:
     url: "{{ image.meta.image_url }}"
     checksum: >-
@@ -8,8 +12,25 @@
       }}:{{
         image.meta.image_checksum
       }}
-    dest: "/tmp/{{ image.meta.image_name }}"
+    dest: "/tmp/{{ image_name }}"
     mode: 640
+
+- name: "Decompress image if compressed (xz)"
+  when: image.meta.image_name.endswith(".xz")
+  block:
+    - name: Rename image
+      ansible.builtin.set_fact:
+        image_name: "{{ image_name | regex_replace('\\.xz$', '') }}"
+
+    - name: "Decompress image {{ image.meta.image_name }}"
+      ansible.builtin.command:
+        cmd: "xz --force --decompress /tmp/{{ image.meta.image_name }}"
+      changed_when: true
+
+    - name: "Delete the compressed image on disk {{ image.meta.image_name }}"
+      ansible.builtin.file:
+        path: "/tmp/{{ image.meta.image_name }}"
+        state: absent
 
 - name: "Deleting outdated templates with name: {{ image.meta.template_name }}"
   vars:
@@ -50,10 +71,10 @@
   changed_when: true
 
 # yamllint disable-line rule:line-length
-- name: "Import image {{ image.meta.image_name }} as disk of {{ image.meta.template_name }}"
+- name: "Import image {{ image_name }} as disk of {{ image.meta.template_name }}"
   ansible.builtin.command:
     # yamllint disable-line rule:line-length
-    cmd: "qm importdisk {{ next_id.stdout }} /tmp/{{ image.meta.image_name }} {{ proxmox_template_datastore }}"
+    cmd: "qm importdisk {{ next_id.stdout }} /tmp/{{ image_name }} {{ proxmox_template_datastore }}"
   changed_when: true
 
 - name: "Mount image disk to {{ image.meta.template_name }}"
@@ -73,7 +94,7 @@
     cmd: "qm template {{ next_id.stdout }}"
   changed_when: true
 
-- name: "Delete the image on disk {{ image.meta.image_name }}"
+- name: "Delete the image on disk {{ image_name }}"
   ansible.builtin.file:
-    path: "/tmp/{{ image.meta.image_name }}"
+    path: "/tmp/{{ image_name }}"
     state: absent
