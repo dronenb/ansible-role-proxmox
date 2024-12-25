@@ -25,10 +25,13 @@ def main():
         version = 0.0
         for tag in soup.find_all("a"):
             match = re.search(r"(\d+\.\d+)/", tag.get_text())
+            if match:
+                print(float(match.group(1)))
             if match and float(match.group(1)) > version:
                 version = float(match.group(1))
-        image_name = "Rocky-%.0f-GenericCloud.latest.x86_64.qcow2" % (version)
+        image_name = "Rocky-%d-GenericCloud.latest.x86_64.qcow2" % (int(version))
         image_url = "%s/%s/images/%s/%s" % (base_url, str(version), module.params["arch"], image_name)
+        print(image_url)
         checksum_url = "%s.CHECKSUM" % (image_url)
         with urllib.request.urlopen(checksum_url) as checksum_response:
             for line in checksum_response.read().decode().split("\n"):

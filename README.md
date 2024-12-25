@@ -1,20 +1,16 @@
-Role Name
-=========
+# ansible-role-proxmox
 
 Configures Proxmox the way I want.
 
-Role Variables
---------------
+## Role Variables
 
 TODO
 
-Dependencies
-------------
+## Dependencies
 
 - dronenb.debian
 
-Example Playbook
-----------------
+## Example Playbook
 
 TODO
 
@@ -24,12 +20,22 @@ Including an example of how to use your role (for instance, with variables passe
       roles:
          - { role: username.rolename, x: 42 }
 
-License
--------
+## Testing modules locally
+
+```bash
+ANSIBLE_LIBRARY=./library ansible -m get_rocky_cloud localhost
+```
+
+or, if wanting to bypass Ansible:
+
+```zsh
+python3 library/get_rocky_cloud.py =(echo -n '{"ANSIBLE_MODULE_ARGS":{}}')
+```
+
+## License
 
 MIT
 
-Author Information
-------------------
+## Author Information
 
 Ben Dronen
