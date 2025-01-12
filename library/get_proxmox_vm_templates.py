@@ -13,7 +13,7 @@ def main():
     )
     templates = []
     for vm in json.loads(result.stdout.decode('utf-8')):
-        if vm['template'] == 1:
+        if vm['template'] == 1 and 'tags' in vm:
             vm['tags'] = vm['tags'].split(',')
             vm['image_checksum'] = ""
             for tag in vm['tags']:
