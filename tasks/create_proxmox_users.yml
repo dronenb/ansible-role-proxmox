@@ -1,8 +1,8 @@
 ---
 - name: Add Terraform user to Proxmox
   vars:
-    query: "[?userid=='{{ item.username }}@pve']"
-  when: not(existing_proxmox_users | list | json_query(query))
+    jq_query: "[?userid=='{{ item.username }}@pve']"
+  when: not(existing_proxmox_users | list | json_query(jq_query))
   block:
     - name: "Create Proxmox user {{ item.username }}"
       changed_when: true

@@ -29,7 +29,7 @@ def main():
                 print(float(match.group(1)))
             if match and float(match.group(1)) > version:
                 version = float(match.group(1))
-        image_name = "Rocky-%d-GenericCloud.latest.x86_64.qcow2" % (int(version))
+        image_name = "Rocky-%d-GenericCloud-Base.latest.x86_64.qcow2" % (int(version))
         image_url = "%s/%s/images/%s/%s" % (base_url, str(version), module.params["arch"], image_name)
         print(image_url)
         checksum_url = "%s.CHECKSUM" % (image_url)

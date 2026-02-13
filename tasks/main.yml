@@ -1,4 +1,5 @@
 ---
+# yamllint disable rule:line-length
 # tasks file for proxmox
 - name: Set hostname
   ansible.builtin.hostname:
@@ -9,6 +10,7 @@
     - /etc/apt/sources.list.d/pve-enterprise.list
     - /etc/apt/sources.list.d/pve-enterprise.list.dpkg-dist
     - /etc/apt/sources.list.d/ceph.list
+    - /etc/apt/sources.list.d/pve-enterprise.sources
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent
@@ -17,29 +19,89 @@
   ansible.builtin.set_fact:
     proxmox_no_sub_repo: pve-install-repo
 
-- name: Add Proxmox VE no subscription repo
-  ansible.builtin.apt_repository:
-    filename: "{{ proxmox_no_sub_repo }}"
-    repo: >-
-      deb http://download.proxmox.com/debian/pve
-        {{ ansible_facts.distribution_release }} pve-no-subscription
+- name: Ensure Debian archive keyring package is present
+  ansible.builtin.apt:
+    name: debian-archive-keyring
+    state: present
+    update_cache: false
+
+- name: Check for existing /etc/apt/sources.list
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list
+  register: sources_list_stat
+
+- name: Backup existing /etc/apt/sources.list
+  when: sources_list_stat.stat.exists
+  ansible.builtin.copy:
+    src: /etc/apt/sources.list
+    dest: /etc/apt/sources.list.bak
+    remote_src: true
+    backup: true
+    mode: '0644'
+
+- name: Replace /etc/apt/sources.list with managed notice
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list
+    content: "# Managed by Ansible. Sources moved to /etc/apt/sources.list.d/*.sources\n"
+    backup: true
+    mode: '0644'
+
+- name: Add Debian repo (deb822 format)
+  ansible.builtin.deb822_repository:
+    name: debian
+    types: deb
+    uris: https://deb.debian.org/debian
+    suites: "{{ ansible_facts.distribution_release }} {{ ansible_facts.distribution_release }}-updates"
+    components:
+      - main
+      - non-free-firmware
+    signed_by: /usr/share/keyrings/debian-archive-keyring.gpg
     state: present
 
-- name: Find Proxmox VE no sub repos for older distributions
-  ansible.builtin.command:
-    cmd: >-
-      grep -v {{ ansible_facts.distribution_release }}
-        /etc/apt/sources.list.d/{{ proxmox_no_sub_repo }}.list
-  register: old_repos
-  changed_when: false
-  failed_when: false
+- name: Add Debian Security repo (deb822 format)
+  ansible.builtin.deb822_repository:
+    name: debian-security
+    types: deb
+    uris: https://security.debian.org/debian-security/
+    suites: "{{ ansible_facts.distribution_release }}-security"
+    components:
+      - main
+      - non-free-firmware
+    signed_by: /usr/share/keyrings/debian-archive-keyring.gpg
+    state: present
 
-- name: Remove Proxmox VE no subscription repo for older distributions
-  loop: "{{ old_repos.stdout_lines }}"
-  ansible.builtin.apt_repository:
-    filename: "{{ proxmox_no_sub_repo }}"
-    repo: "{{ item }}"
+- name: Remove Proxmox VE Enterprise Repository
+  ansible.builtin.deb822_repository:
+    name: pve-enterprise
+    types: deb
+    uris: https://enterprise.proxmox.com/debian/pve
+    suites: "{{ ansible_facts.distribution_release }}"
+    components:
+      - pve-enterprise
+    signed_by: /usr/share/keyrings/proxmox-archive-keyring.gpg
     state: absent
+
+- name: Add Proxmox VE no subscription repo
+  ansible.builtin.deb822_repository:
+    name: proxmox
+    types: deb
+    uris: http://download.proxmox.com/debian/pve
+    suites: "{{ ansible_facts.distribution_release }}"
+    components:
+      - pve-no-subscription
+    signed_by: /usr/share/keyrings/proxmox-archive-keyring.gpg
+    state: present
+
+- name: Add Ceph no subscription repo
+  ansible.builtin.deb822_repository:
+    name: ceph
+    types: deb
+    uris: http://download.proxmox.com/debian/ceph-squid
+    suites: "{{ ansible_facts.distribution_release }}"
+    components:
+      - no-subscription
+    signed_by: /usr/share/keyrings/proxmox-archive-keyring.gpg
+    state: present
 
 # This is after the proxmox repo removal/add intentionally
 # Since this role includes apt update/upgrade
@@ -49,7 +111,7 @@
 
 - name: Install useful packages
   ansible.builtin.apt:
-    update_cache: false
+    update_cache: true
     pkg:
       - jq
       - libguestfs-tools
@@ -57,6 +119,7 @@
       - python3-bs4
       - python3-lxml
       - python3-certifi
+      - unattended-upgrades
 
 - name: Check if hush login enabled
   ansible.builtin.stat:
@@ -86,7 +149,7 @@
     src: "{{ proxmoxlib_path }}"
     dest: "{{ proxmoxlib_path }}.bak"
     remote_src: true
-    mode: '644'
+    mode: '0644'
 
 - name: Remove no valid sub popup
   ansible.builtin.replace:
@@ -94,6 +157,7 @@
     regexp: >-
       (^\s+)(Ext.Msg.show\(\{\s+title:\s+gettext\('No valid subscription)
     replace: '\1void({ //\2'
+    backup: true
   notify: Restart pveproxy
 
 - name: Enable IOMMU (Intel)
@@ -102,12 +166,37 @@
       list |
       intersect(['GenuineIntel']) |
       length > 0
-  ansible.builtin.lineinfile:
-    path: /etc/default/grub
-    search_string: GRUB_CMDLINE_LINUX_DEFAULT
-    line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on"'
+  block:
+    - name: Check if grub already contains intel_iommu
+      ansible.builtin.command:
+        argv:
+          - grep
+          - -q
+          - intel_iommu=on
+          - /etc/default/grub
+      register: grub_iommu_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Add intel_iommu to GRUB_CMDLINE_LINUX_DEFAULT
+      when: grub_iommu_check.rc != 0
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: '^(GRUB_CMDLINE_LINUX_DEFAULT=)"(.*)"'
+        line: 'GRUB_CMDLINE_LINUX_DEFAULT="\2 intel_iommu=on"'
+        backrefs: true
+      notify: Update grub
+
+- name: Install microcode on Intel systems
+  when: >-
+    ansible_facts.processor |
+      list |
+      intersect(['GenuineIntel']) |
+      length > 0
+  ansible.builtin.apt:
+    name: intel-microcode
     state: present
-  notify: Update grub
+    update_cache: false
 
 - name: Check existing Proxmox roles
   changed_when: false
@@ -193,7 +282,7 @@
   vars:
     # yamllint disable-line rule:line-length
     query1: "[?name==`{{ image.meta.template_name }}` && image_checksum==`{{ image.meta.image_checksum }}`]"
-  when: not (existing_proxmox_templates.meta | json_query(query1))
+  when: not (existing_proxmox_templates.meta | default([]) | json_query(query1))
   ansible.builtin.include_tasks: create_cloud_vm_template.yml
 
 - name: Get available Proxmox LXC templates

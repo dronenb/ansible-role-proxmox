@@ -2,8 +2,8 @@
 # TODO: Check to make sure privileges match
 - name: "Create role {{ item.name }} to Proxmox"
   vars:
-    query: "[?roleid=='{{ item.name }}']"
-  when: not(existing_proxmox_roles | json_query(query))
+    jq_query: "[?roleid=='{{ item.name }}']"
+  when: not(existing_proxmox_roles | json_query(jq_query))
   ansible.builtin.command:
     cmd: >-
       /usr/sbin/pveum role add {{ item.name }}

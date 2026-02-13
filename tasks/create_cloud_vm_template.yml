@@ -57,7 +57,7 @@
       qm  create      {{ next_id.stdout }}
           --bios      ovmf
           --core      2
-          --cpu       cputype=x86-64-v2-AES
+          --cpu       cputype=x86-64-v3
           --ide2      {{ proxmox_template_datastore }}:cloudinit
           --ipconfig0 ip=dhcp,ip6=dhcp
           --machine   q35

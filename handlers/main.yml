@@ -7,5 +7,5 @@
 
 - name: Update grub
   ansible.builtin.command:
-    cmd: /usr/sbin/update-grub
+    cmd: /usr/sbin/proxmox-boot-tool refresh
   changed_when: true

@@ -1,1 +1,31 @@
+# Ansible dependency directories
+.ansible/
+
+# Python cache
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ansible retry files
+*.retry
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# pytest cache
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Vim swap files
+*.swp
+*.swo
+*~
+
+# Log files
+*.log
