@@ -13,11 +13,11 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: 76b3d32d3f4b965e1d6425253c59407420ae2c43  # frozen: v0.47.0
+    rev: e72a3ca1632f0b11a07d171449fe447a7ff6795e  # frozen: v0.48.0
     hooks:
       - id: markdownlint
   - repo: https://github.com/ansible/ansible-lint.git
-    rev: 7f6abc5ef97d0fb043a0f3d416dfbc74399fbda0  # frozen: v26.1.1
+    rev: 8ba9595a4acd1b906eb75568b34f6ef592cd1528  # frozen: v26.3.0
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$

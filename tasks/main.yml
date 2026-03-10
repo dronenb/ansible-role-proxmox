@@ -206,7 +206,6 @@
 
 - name: Parse Proxmox roles JSON
   ansible.builtin.set_fact:
-    # yamllint disable-line rule:line-length
     existing_proxmox_roles: "{{ existing_proxmox_roles_output.stdout | from_json }}"
 
 - name: Create Proxmox roles
@@ -224,7 +223,6 @@
 
 - name: Parse Proxmox user JSON
   ansible.builtin.set_fact:
-    # yamllint disable-line rule:line-length
     existing_proxmox_users: "{{ existing_proxmox_user_output.stdout | from_json }}"
 
 - name: Create Proxmox users
@@ -237,6 +235,14 @@
 - name: Retrieve image URL and checksum for Fedora CoreOS image
   get_fedora_coreos:
   register: fcos_image
+
+- name: Retrieve image URL and checksum for SCOS (Single Node CoreOS) image
+  get_scos:
+  register: scos_image
+
+- name: Display SCOS version information
+  ansible.builtin.debug:
+    msg: "SCOS version {{ scos_image.meta.image_version }} (OKD {{ scos_image.meta.okd_version }})"
 
 - name: Retrieve image URL and checksum for Debian Cloud image
   get_debian_cloud:
@@ -256,7 +262,6 @@
 
 - name: Get list of Proxmox image datastores
   ansible.builtin.command:
-    # yamllint disable-line rule:line-length
     cmd: pvesh get /nodes/{{ inventory_hostname }}/storage -content images --output-format json
   register: image_datastores_output
   changed_when: false
@@ -276,11 +281,11 @@
     - "{{ rocky_cloud_image }}"
     - "{{ ubuntu_cloud_image }}"
     - "{{ fcos_image }}"
+    - "{{ scos_image }}"
   loop_control:
     loop_var: image
     label: "{{ image.meta.image_name }}"
   vars:
-    # yamllint disable-line rule:line-length
     query1: "[?name==`{{ image.meta.template_name }}` && image_checksum==`{{ image.meta.image_checksum }}`]"
   when: not (existing_proxmox_templates.meta | default([]) | json_query(query1))
   ansible.builtin.include_tasks: create_cloud_vm_template.yml
